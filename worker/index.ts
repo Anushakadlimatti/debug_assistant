@@ -1,7 +1,9 @@
-import { incidentDataset } from "./incident-data.ts";
-import { buildUserPrompt, SYSTEM_PROMPT } from "./prompt.ts";
+import { IncidentChatSession } from "./chat-session.ts";
 
-const DEFAULT_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
+export { IncidentChatSession };
+
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export default {
   async fetch(request, env): Promise<Response> {
@@ -32,57 +34,45 @@ async function handleChat(request: Request, env: Env): Promise<Response> {
     return json({ error: "Please provide a question in the `message` field." }, 400);
   }
 
-  const model = (env.MODEL_ID || DEFAULT_MODEL) as typeof DEFAULT_MODEL;
+  const sessionId = resolveSessionId(
+    typeof body === "object" && body !== null && "sessionId" in body
+      ? (body as { sessionId: unknown }).sessionId
+      : undefined,
+  );
 
   try {
-    const result = await env.AI.run(model, {
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: buildUserPrompt(message, incidentDataset) },
-      ],
-      max_tokens: 1200,
-      temperature: 0.2,
-    });
+    const stub = env.CHAT_SESSIONS.getByName(sessionId);
+    const result = await stub.chat(message);
 
-    const reply = extractReply(result);
-    if (!reply) {
-      return json({ error: "The model returned an empty response." }, 502);
+    if ("error" in result) {
+      return json(
+        {
+          error: result.error,
+          ...(result.detail ? { detail: result.detail } : {}),
+          sessionId,
+        },
+        502,
+      );
     }
 
-    return json({ reply });
-  } catch (error) {
-    const detail = error instanceof Error ? error.message : "Unknown AI error";
+    return json({ reply: result.reply, sessionId });
+  } catch {
     return json(
-      { error: "Failed to analyze the incident. Please try again.", detail },
+      { error: "Failed to analyze the incident. Please try again.", sessionId },
       502,
     );
   }
 }
 
-function extractReply(result: unknown): string {
-  if (typeof result === "string") {
-    return result.trim();
+function resolveSessionId(value: unknown): string {
+  if (typeof value === "string") {
+    const candidate = value.trim();
+    if (UUID_PATTERN.test(candidate)) {
+      return candidate.toLowerCase();
+    }
   }
 
-  if (!result || typeof result !== "object") {
-    return "";
-  }
-
-  const value = result as {
-    response?: unknown;
-    choices?: Array<{ message?: { content?: unknown } }>;
-  };
-
-  if (typeof value.response === "string") {
-    return value.response.trim();
-  }
-
-  const content = value.choices?.[0]?.message?.content;
-  if (typeof content === "string") {
-    return content.trim();
-  }
-
-  return "";
+  return crypto.randomUUID();
 }
 
 function json(data: unknown, status = 200): Response {

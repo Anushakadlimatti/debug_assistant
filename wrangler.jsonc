@@ -13,5 +13,19 @@
   },
   "vars": {
     "MODEL_ID": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "CHAT_SESSIONS",
+        "class_name": "IncidentChatSession"
+      }
+    ]
+  },
+  "exports": {
+    "IncidentChatSession": {
+      "type": "durable-object",
+      "storage": "sqlite"
+    }
   }
 }

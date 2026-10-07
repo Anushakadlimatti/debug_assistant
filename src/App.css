@@ -31,6 +31,27 @@
   letter-spacing: -0.04em;
 }
 
+.new-conversation {
+  margin-left: auto;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.new-conversation:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.new-conversation:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .subtitle {
   margin: 8px 0 0;
   max-width: 62ch;

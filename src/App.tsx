@@ -16,7 +16,12 @@ const EXAMPLE_QUESTIONS = [
   "What should we do first?",
 ];
 
+function createSessionId(): string {
+  return crypto.randomUUID();
+}
+
 export default function App() {
+  const [sessionId, setSessionId] = useState(createSessionId);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -48,10 +53,18 @@ export default function App() {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: trimmed }),
+        body: JSON.stringify({ sessionId, message: trimmed }),
       });
 
-      const data = (await response.json()) as { reply?: string; error?: string };
+      const data = (await response.json()) as {
+        reply?: string;
+        error?: string;
+        sessionId?: string;
+      };
+
+      if (typeof data.sessionId === "string" && data.sessionId !== sessionId) {
+        setSessionId(data.sessionId);
+      }
 
       if (!response.ok || !data.reply) {
         throw new Error(data.error || `Request failed (${response.status})`);
@@ -73,13 +86,31 @@ export default function App() {
     void sendMessage(input);
   }
 
+  function startNewConversation() {
+    if (loading) {
+      return;
+    }
+
+    setSessionId(createSessionId());
+    setMessages([]);
+    setError(null);
+    setInput("");
+  }
+
   return (
     <div className="app">
       <header className="header">
         {/* <p className="eyebrow">Cloudflare Workers AI · Llama 3.3</p> */}
         <div className="title-row">
           <h1>Incident Investigation Assistant</h1>
-          {/* <span className="status">INC-1842 open</span> */}
+          <button
+            type="button"
+            className="new-conversation"
+            disabled={loading}
+            onClick={startNewConversation}
+          >
+            New conversation
+          </button>
         </div>
         <p className="subtitle">
           Ask about the mock production incident. The assistant uses logs, metrics, and
