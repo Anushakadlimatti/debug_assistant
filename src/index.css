@@ -1,0 +1,37 @@
+:root {
+  --text: #e8eef4;
+  --muted: #8b9bb4;
+  --bg: #0f1419;
+  --surface: #16202c;
+  --border: #2a3a4d;
+  --accent: #7dd3fc;
+  --sans: "Segoe UI", system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font: 16px/1.5 var(--sans);
+  color: var(--text);
+  background: var(--bg);
+}
+
+h1,
+h2 {
+  color: var(--text);
+  font-weight: 650;
+}
+
+button,
+textarea {
+  font: inherit;
+}

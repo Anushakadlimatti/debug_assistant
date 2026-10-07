@@ -1,0 +1,17 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "incident-investigation-assistant",
+  "compatibility_date": "2026-10-07",
+  "main": "./worker/index.ts",
+  "assets": {
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  "ai": {
+    "binding": "AI",
+    "remote": true
+  },
+  "vars": {
+    "MODEL_ID": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+  }
+}
